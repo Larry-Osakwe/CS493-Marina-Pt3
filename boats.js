@@ -180,7 +180,7 @@ router.delete('/:id', function(req, res){
     .then( (boat) => { 
     	try {
     		const checkIfExists = boat[0].name;
-        	delete_boat(req.params.id).then(res.status(204).type('json').send('Status: 404 Bad Request { "Error": "The request object is missing at least one of the required attributes" }'));
+        	delete_boat(req.params.id).then(res.status(204).end());
     	} catch {
     		res.status(404).type('json').send('Status: 404 Not Found\n\n{\n "Error": "No boat with this boat_id exists" \n}');
     	}
