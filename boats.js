@@ -59,7 +59,7 @@ function get_boat_loads(req, id){
 function patch_boat(id, name, type, length){
     const key = datastore.key([BOAT, parseInt(id,10)]);
     const boat = {"name": name, "type": type, "length": length};
-    return datastore.save({"key":key, "data":boat});
+    return datastore.upsert({"key":key, "data":boat});
 }
 
 function put_boat(id, name, type, length){
@@ -166,8 +166,40 @@ router.post('/', function(req, res){
 });
 
 router.patch('/:id', function(req, res){
-    patch_boat(req.params.id, req.body.name, req.body.type, req.body.length)
-    .then(res.status(200).end());
+	if (!checkProps(req.body, "name")) {
+		const boat = get_boat(req.params.id).then((boat) => {
+			patch_boat(req.params.id, boat[0].name, req.body.type, req.body.length)
+    		.then(res.status(200).end());
+		});
+	} else if (!checkProps(req.body, "type")) {
+		const boat = get_boat(req.params.id).then((boat) => {
+			patch_boat(req.params.id, req.body.name, boat[0].type, req.body.length)
+    		.then(res.status(200).end());
+		});
+	} else if (!checkProps(req.body, "length")) {
+		const boat = get_boat(req.params.id).then((boat) => {
+			patch_boat(req.params.id, req.body.name, req.body.type, boat[0].length)
+    		.then(res.status(200).end());
+		});
+	} else if (!checkProps(req.body, "name|type")) {
+		const boat = get_boat(req.params.id).then((boat) => {
+			patch_boat(req.params.id, boat[0].name, boat[0].type, req.body.length)
+    		.then(res.status(200).end());
+		});
+	} else if (!checkProps(req.body, "name|length")) {
+		const boat = get_boat(req.params.id).then((boat) => {
+			patch_boat(req.params.id, boat[0].name, req.body.type, boat[0].length)
+    		.then(res.status(200).end());
+		});
+	} else if (!checkProps(req.body, "type|length")) {
+		const boat = get_boat(req.params.id).then((boat) => {
+			patch_boat(req.params.id, req.body.name, boat[0].type, boat[0].length)
+    		.then(res.status(200).end());
+		});
+	} else {
+		patch_boat(req.params.id, req.body.name, req.body.type, req.body.length)
+    	.then(res.status(200).end());
+	}
 });
 
 router.put('/:id', function(req, res){
