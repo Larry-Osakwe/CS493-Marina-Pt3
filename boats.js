@@ -88,12 +88,8 @@ function put_load(bid, lid){
 
 }
 
-function stringifyExample(idValue, nameValue, typeValue, lengthValue, loadValue, selfUrl){
-	var entities = loadValue;
-	var data = [];
-	var loadUrl = "http://localhost:8080/loads/";  
-	entities.forEach((entity) => {data.push('{ "id": "' + entity + '", "self": "'+ loadUrl + entity + '"}')});
-	return '{ "id": "' + idValue  + '", "name": "' + nameValue + '", "type": "' + typeValue + '", "length": ' + lengthValue + ', "loads": [' + data + '], "self": "' + selfUrl + '"}'; 
+function stringifyExample(idValue, nameValue, typeValue, lengthValue, selfUrl){
+	return '{ "id": "' + idValue  + '", "name": "' + nameValue + '", "type": "' + typeValue + '", "length": ' + lengthValue + ', "self": "' + selfUrl + '"}'; 
 }
 
 // check request body function from: https://stackoverflow.com/questions/47502236/check-many-req-body-values-nodejs-api
@@ -155,7 +151,7 @@ router.post('/', function(req, res){
 	    .then( key => {
 	    	var data = datastore.get(key);
 	    	data.then(boatData => {
-	    		res.status(201).type('json').send('Status: 201 Created\n\n' + stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, boatData[0].loads, req.protocol + '://' + req.get("host") + req.baseUrl));	
+	    		res.status(201).type('json').send('Status: 201 Created\n\n' + stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, req.protocol + '://' + req.get("host") + req.baseUrl));	
 	    	});
 	    });	
 	}    
