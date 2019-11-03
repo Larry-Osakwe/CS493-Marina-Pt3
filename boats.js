@@ -56,6 +56,12 @@ function get_boat_loads(req, id){
     });
 }
 
+function patch_boat(id, name, type, length){
+    const key = datastore.key([BOAT, parseInt(id,10)]);
+    const boat = {"name": name, "type": type, "length": length};
+    return datastore.save({"key":key, "data":boat});
+}
+
 function put_boat(id, name, type, length){
     const key = datastore.key([BOAT, parseInt(id,10)]);
     var data = [];
@@ -144,7 +150,9 @@ router.get('/:id/loads', function(req, res){
 });
 
 router.post('/', function(req, res){
-	if (!checkProps(req.body, "name|type|length")) {
+	if (req.get('content-type') !== 'application/json') {
+		res.status(415).send('Server only accepts application/json data.');
+	} else if (!checkProps(req.body, "name|type|length")) {
 		res.status(400).send('Status: 400 Bad Request\n\n{\n "Error": "The request object is missing at least one of the required attributes" \n}');
 	} else {
 		post_boat(req.body.name, req.body.type, req.body.length)
@@ -155,6 +163,11 @@ router.post('/', function(req, res){
 	    	});
 	    });	
 	}    
+});
+
+router.patch('/:id', function(req, res){
+    patch_boat(req.params.id, req.body.name, req.body.type, req.body.length)
+    .then(res.status(200).end());
 });
 
 router.put('/:id', function(req, res){
