@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 
+const json2html = require('json-to-html');
+
 app.use('/', require('./index'));
 
 // Listen to the App Engine-specified port, or 8080 otherwise

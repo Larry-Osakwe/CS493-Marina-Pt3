@@ -133,12 +133,25 @@ router.get('/', function(req, res){
 
 router.get('/:id', function(req, res) {
 	const boat = get_boat(req.params.id)
-    .then( (boat) => { 
-    	try {
-        	res.status(200).type('json').send('Status: 200 OK\n\n' + stringifyExample(req.params.id, boat[0].name, boat[0].type, boat[0].length, boat[0].loads, req.protocol + '://' + req.get("host") + req.baseUrl + '/' + req.params.id))
-    	} catch {
-    		res.status(404).send('Status: 404 Not Found\n\n{\n "Error": "No boat with this boat_id exists" \n}');
-    	}
+    .then( (boat) => {
+	    const accepts = req.accepts(['application/json', 'text/html']);
+	    if (!accepts) {
+	    	res.status(406).send('Not Acceptable');
+	    } else if (accepts === 'application/json') {
+	    	try {
+	        	res.status(200).type('json').send('Status: 200 OK\n\n' + stringifyExample(req.params.id, boat[0].name, boat[0].type, boat[0].length, req.protocol + '://' + req.get("host") + req.baseUrl + '/' + req.params.id))
+	    	} catch {
+	    		res.status(404).send('Status: 404 Not Found\n\n{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
+	    } else if (accepts === 'text/html') {
+	    	try {
+	        	res.status(200).type('json').send(json2html('Status: 200 OK\n\n' + stringifyExample(req.params.id, boat[0].name, boat[0].type, boat[0].length, req.protocol + '://' + req.get("host") + req.baseUrl + '/' + req.params.id)).slice(1,-1));
+	    	} catch {
+	    		res.status(404).send('Status: 404 Not Found\n\n{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
+	    } else {
+	    	res.status(500).send("Bad Content type");
+	    }
     });   
 });
 
