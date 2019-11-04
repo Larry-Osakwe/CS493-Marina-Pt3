@@ -70,8 +70,7 @@ function patch_boat(id, name, type, length){
 
 function put_boat(id, name, type, length){
     const key = datastore.key([BOAT, parseInt(id,10)]);
-    var data = [];
-    const boat = {"name": name, "type": type, "length": length, "loads": data};
+    const boat = {"name": name, "type": type, "length": length};
     return datastore.save({"key":key, "data":boat});
 }
 
@@ -297,7 +296,7 @@ router.patch('/:id', function(req, res){
 router.put('/:id', function(req, res){
 	unique_boat(req, req.body.name).then(function(results){
 		if (!results) {
-			res.status(415).send('Boat name must be unique.');
+			res.status(403).type('json').send('{\n "Error": "Boat name must be unique." \n}');
 		} else {
 			put_boat(req.params.id, req.body.name, req.body.type, req.body.length)
 	    	.then(res.status(303).end());
