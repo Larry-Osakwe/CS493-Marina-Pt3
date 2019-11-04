@@ -25,18 +25,25 @@ function get_boat(id){
     return datastore.get(key);
 }
 
-function get_boats(req){
-    var q = datastore.createQuery(BOAT).limit(3);
-    const results = {};
-    if(Object.keys(req.query).includes("cursor")){
-        q = q.start(req.query.cursor);
-    }
+// function get_boats(req){
+//     var q = datastore.createQuery(BOAT).limit(3);
+//     const results = {};
+//     if(Object.keys(req.query).includes("cursor")){
+//         q = q.start(req.query.cursor);
+//     }
+// 	return datastore.runQuery(q).then( (entities) => {
+//             results.items = entities[0].map(ds.fromDatastore);
+//             if(entities[1].moreResults !== ds.Datastore.NO_MORE_RESULTS ){
+//                 results.next = req.protocol + "://" + req.get("host") + req.baseUrl + "?cursor=" + entities[1].endCursor;
+//             }
+// 			return results;
+// 		});
+// }
+
+function get_boats(){
+	const q = datastore.createQuery(BOAT);
 	return datastore.runQuery(q).then( (entities) => {
-            results.items = entities[0].map(ds.fromDatastore);
-            if(entities[1].moreResults !== ds.Datastore.NO_MORE_RESULTS ){
-                results.next = req.protocol + "://" + req.get("host") + req.baseUrl + "?cursor=" + entities[1].endCursor;
-            }
-			return results;
+			return entities[0].map(fromDatastore);
 		});
 }
 
@@ -112,6 +119,44 @@ function checkProps(obj, list) {
     return true;
 }
 
+function unique_boat(req, prop) {
+	var boats = get_boats(req);
+	return boats
+	.then( (boats) => {
+		var data = [];
+		boats.forEach((entity) => {data.push(entity.name)});
+		return data;})
+		.then((data) => {
+			if (data.find(boatName => boatName === prop)) {
+        	return false;
+        } else {
+        	return true;
+        }	
+	});
+
+}
+
+function get_boat_loads(req, id){
+    const key = datastore.key([BOAT, parseInt(id,10)]);
+    return datastore.get(key)
+    .then( (boats) => {
+        const boat = boats[0];
+        const load_keys = boat.loads.map( (g_id) => {
+            return datastore.key([LOAD, parseInt(g_id,10)]);
+        });
+        return datastore.get(load_keys);
+    })
+    .then((loads) => {
+        loads = loads[0].map(ds.fromDatastore);
+        return loads;
+    });
+}
+
+function fromDatastore(item){
+    item.id = item[datastore.KEY].id;
+    return item;
+}
+
 /* ------------- End Model Functions ------------- */
 
 /* ------------- Begin Controller Functions ------------- */
@@ -163,19 +208,23 @@ router.get('/:id/loads', function(req, res){
 });
 
 router.post('/', function(req, res){
-	if (req.get('content-type') !== 'application/json') {
-		res.status(415).send('Server only accepts application/json data.');
-	} else if (!checkProps(req.body, "name|type|length")) {
-		res.status(400).send('Status: 400 Bad Request\n\n{\n "Error": "The request object is missing at least one of the required attributes" \n}');
-	} else {
-		post_boat(req.body.name, req.body.type, req.body.length)
-	    .then( key => {
-	    	var data = datastore.get(key);
-	    	data.then(boatData => {
-	    		res.status(201).type('json').send('Status: 201 Created\n\n' + stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, req.protocol + '://' + req.get("host") + req.baseUrl));	
-	    	});
-	    });	
-	}    
+	unique_boat(req, req.body.name).then(function(results){
+		if (req.get('content-type') !== 'application/json') {
+			res.status(415).send('Server only accepts application/json data.');
+		} else if (!checkProps(req.body, "name|type|length")) {
+			res.status(400).send('Status: 400 Bad Request\n\n{\n "Error": "The request object is missing at least one of the required attributes" \n}');
+		} else if (!results) {
+			res.status(415).send('Boat name must be unique.');
+		} else {
+			post_boat(req.body.name, req.body.type, req.body.length)
+		    .then( key => {
+		    	var data = datastore.get(key);
+		    	data.then(boatData => {
+		    		res.status(201).type('json').send('Status: 201 Created\n\n' + stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, req.protocol + '://' + req.get("host") + req.baseUrl));	
+		    	});
+		    });	
+		} 	
+	});   
 });
 
 router.patch('/:id', function(req, res){
