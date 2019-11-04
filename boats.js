@@ -230,7 +230,7 @@ router.post('/', function(req, res){
 		    .then( key => {
 		    	var data = datastore.get(key);
 		    	data.then(boatData => {
-		    		res.status(201).type('json').send('Status: 201 Created\n\n' + stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, req.protocol + '://' + req.get("host") + req.baseUrl));	
+		    		res.status(201).type('json').send('Status: 201 Created\n\n' + stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, req.protocol + '://' + req.get("host") + req.baseUrl + req.params.id));	
 		    	});
 		    });	
 		} 	
