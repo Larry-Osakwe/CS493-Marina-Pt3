@@ -209,19 +209,19 @@ router.get('/:id/loads', function(req, res){
 router.post('/', function(req, res){
 	unique_boat(req, req.body.name).then(function(results){
 		if (req.get('content-type') !== 'application/json') {
-			res.status(406).send('Server only accepts application/json data.');
+			res.status(406).type('json').send('{\n "Error": "Server only accepts application/json data." \n}');
 		} else if (!checkProps(req.body, "name|type|length")) {
-			res.status(400).send('Status: 400 Bad Request\n\n{\n "Error": "The request object is missing at least one of the required attributes" \n}');
+			res.status(400).type('json').send('{\n "Error": "The request object is missing at least one of the required attributes" \n}');
 		} else if (!results) {
-			res.status(403).send('Boat name must be unique.');
+			res.status(403).type('json').send('{\n "Error": "Boat name must be unique." \n}');
 		} else if (!checkIfInt(req.body.length)){
-			res.status(400).send('Length must be a number.');
+			res.status(400).type('json').send('{\n "Error": "Length must be a number." \n}');
 		} else {
 			post_boat(req.body.name, req.body.type, req.body.length)
 		    .then( key => {
 		    	var data = datastore.get(key);
 		    	data.then(boatData => {
-		    		res.status(201).type('json').send('Status: 201 Created\n\n' + stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, req.protocol + '://' + req.get("host") + req.baseUrl + req.params.id));	
+		    		res.status(201).type('json').send(stringifyExample(key.id, boatData[0].name, boatData[0].type, boatData[0].length, req.protocol + '://' + req.get("host") + req.baseUrl + "/" + key.id));	
 		    	});
 		    });	
 		} 	
@@ -231,39 +231,68 @@ router.post('/', function(req, res){
 router.patch('/:id', function(req, res){
 	if (!checkProps(req.body, "name")) {
 		const boat = get_boat(req.params.id).then((boat) => {
+			try {
 			patch_boat(req.params.id, boat[0].name, req.body.type, req.body.length)
     		.then(res.status(200).end());
+    		} catch {
+	    		res.status(404).send('{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
 		});
 	} else if (!checkProps(req.body, "type")) {
 		const boat = get_boat(req.params.id).then((boat) => {
+			try {
 			patch_boat(req.params.id, req.body.name, boat[0].type, req.body.length)
     		.then(res.status(200).end());
+    		} catch {
+	    		res.status(404).send('{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
 		});
 	} else if (!checkProps(req.body, "length")) {
 		const boat = get_boat(req.params.id).then((boat) => {
+			try {
 			patch_boat(req.params.id, req.body.name, req.body.type, boat[0].length)
     		.then(res.status(200).end());
+    		} catch {
+	    		res.status(404).send('{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
 		});
 	} else if (!checkProps(req.body, "name|type")) {
 		const boat = get_boat(req.params.id).then((boat) => {
+			try {
 			patch_boat(req.params.id, boat[0].name, boat[0].type, req.body.length)
     		.then(res.status(200).end());
+    		} catch {
+	    		res.status(404).send('{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
 		});
 	} else if (!checkProps(req.body, "name|length")) {
 		const boat = get_boat(req.params.id).then((boat) => {
+			try {
 			patch_boat(req.params.id, boat[0].name, req.body.type, boat[0].length)
     		.then(res.status(200).end());
+    		} catch {
+	    		res.status(404).send('{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
 		});
 	} else if (!checkProps(req.body, "type|length")) {
 		const boat = get_boat(req.params.id).then((boat) => {
+			try {
 			patch_boat(req.params.id, req.body.name, boat[0].type, boat[0].length)
     		.then(res.status(200).end());
+    		} catch {
+	    		res.status(404).send('{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
 		});
 	} else {
+		try {
 		patch_boat(req.params.id, req.body.name, req.body.type, req.body.length)
     	.then(res.status(200).end());
+    	} catch {
+	    		res.status(404).send('{\n "Error": "No boat with this boat_id exists" \n}');
+	    	}
 	}
 });
+
 
 router.put('/:id', function(req, res){
 	unique_boat(req, req.body.name).then(function(results){
@@ -279,7 +308,7 @@ router.put('/:id', function(req, res){
 
 router.put('/', function(req, res){
 
-	res.status(405).type('json').send('Status: 405 Not Found\n\n{\n "Error": "Cannot edit entire list of boats" \n}');
+	res.status(405).type('json').send('{\n "Error": "Cannot edit entire list of boats" \n}');
     
 });
 
@@ -287,7 +316,7 @@ router.put('/:bid/loads/:lid', function(req, res){
     put_load(req.params.bid, req.params.lid)
     .then( key => {
     	if (key == -1) {
-    		res.status(403).send('Status: 403 Bad Request\n\n{\n "Error": "This load already has an assigned boat" \n}');	
+    		res.status(403).send('{\n "Error": "This load already has an assigned boat" \n}');	
     	} else {
     		res.status(204).type('json').end();
     	}
@@ -302,7 +331,7 @@ router.delete('/:id', function(req, res){
     		const checkIfExists = boat[0].name;
         	delete_boat(req.params.id).then(res.status(204).end());
     	} catch {
-    		res.status(404).type('json').send('Status: 404 Not Found\n\n{\n "Error": "No boat with this boat_id exists" \n}');
+    		res.status(404).type('json').send('{\n "Error": "No boat with this boat_id exists" \n}');
     	}
     });  
     
@@ -310,7 +339,7 @@ router.delete('/:id', function(req, res){
 
 router.delete('/', function(req, res){
 
-	res.status(405).type('json').send('Status: 405 Not Found\n\n{\n "Error": "Cannot delete entire list of boats" \n}');
+	res.status(405).type('json').send('{\n "Error": "Cannot delete entire list of boats" \n}');
     
 });
 
