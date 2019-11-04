@@ -157,6 +157,14 @@ function fromDatastore(item){
     return item;
 }
 
+function checkIfInt(input) {
+	if (Number.isInteger(input)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 /* ------------- End Model Functions ------------- */
 
 /* ------------- Begin Controller Functions ------------- */
@@ -210,11 +218,13 @@ router.get('/:id/loads', function(req, res){
 router.post('/', function(req, res){
 	unique_boat(req, req.body.name).then(function(results){
 		if (req.get('content-type') !== 'application/json') {
-			res.status(415).send('Server only accepts application/json data.');
+			res.status(406).send('Server only accepts application/json data.');
 		} else if (!checkProps(req.body, "name|type|length")) {
 			res.status(400).send('Status: 400 Bad Request\n\n{\n "Error": "The request object is missing at least one of the required attributes" \n}');
 		} else if (!results) {
-			res.status(415).send('Boat name must be unique.');
+			res.status(403).send('Boat name must be unique.');
+		} else if (!checkIfInt(req.body.length)){
+			res.status(400).send('Length must be a number.');
 		} else {
 			post_boat(req.body.name, req.body.type, req.body.length)
 		    .then( key => {
@@ -265,10 +275,22 @@ router.patch('/:id', function(req, res){
 });
 
 router.put('/:id', function(req, res){
-    put_boat(req.params.id, req.body.name, req.body.type, req.body.length)
-    .then(res.status(200).end());
+	unique_boat(req, req.body.name).then(function(results){
+		if (!results) {
+			res.status(415).send('Boat name must be unique.');
+		} else {
+			put_boat(req.params.id, req.body.name, req.body.type, req.body.length)
+	    	.then(res.status(303).end());
+		}
+	    
+    });
 });
 
+router.put('/', function(req, res){
+
+	res.status(405).type('json').send('Status: 405 Not Found\n\n{\n "Error": "Cannot edit entire list of boats" \n}');
+    
+});
 
 router.put('/:bid/loads/:lid', function(req, res){
     put_load(req.params.bid, req.params.lid)
@@ -292,6 +314,12 @@ router.delete('/:id', function(req, res){
     		res.status(404).type('json').send('Status: 404 Not Found\n\n{\n "Error": "No boat with this boat_id exists" \n}');
     	}
     });  
+    
+});
+
+router.delete('/', function(req, res){
+
+	res.status(405).type('json').send('Status: 405 Not Found\n\n{\n "Error": "Cannot delete entire list of boats" \n}');
     
 });
 
