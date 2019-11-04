@@ -15,8 +15,7 @@ router.use(bodyParser.json());
 /* ------------- Begin Boat Model Functions ------------- */
 function post_boat(name, type, length){
     var key = datastore.key(BOAT);
-    var data = [];
-	const new_boat = {"name": name, "type": type, "length": length, "loads": data};
+	const new_boat = {"name": name, "type": type, "length": length};
 	return datastore.save({"key":key, "data":new_boat}).then(() => {return key});
 }
 
@@ -170,17 +169,9 @@ function checkIfInt(input) {
 /* ------------- Begin Controller Functions ------------- */
 
 router.get('/', function(req, res){
-    const boats = get_boats(req)
+    const lodgings = get_boats()
 	.then( (boats) => {
-		var entities = boats.items;
-		var data = [];
-		entities.forEach((entity) => {data.push(stringifyExample(entity.id, entity.name, entity.type, entity.length, entity.loads, req.protocol + '://' + req.get("host") + req.baseUrl + '/' + entity.id))});
-        if (boats.next !== undefined) {
-        	res.status(200).type('json').send('Status: 200 OK\n\n' + '[ ' + data + ', "next": '+ '"' + boats.next + '"' + ' ]');	
-        } else {
-        	res.status(200).type('json').send('Status: 200 OK\n\n' + '[ ' + data + ' ]');
-        }
-        
+        res.status(200).json(boats);
     });
 });
 
